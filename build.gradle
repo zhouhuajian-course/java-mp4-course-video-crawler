@@ -10,9 +10,16 @@ repositories {
 }
 
 dependencies {
+    // https://mvnrepository.com/artifact/org.jsoup/jsoup
+    implementation 'org.jsoup:jsoup:1.15.3'
+    // https://mvnrepository.com/artifact/com.alibaba.fastjson2/fastjson2
+    implementation 'com.alibaba.fastjson2:fastjson2:2.0.23'
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
+
+tasks.compileJava.options.encoding "UTF-8"
 
 test {
     useJUnitPlatform()
