@@ -3,24 +3,25 @@ import com.alibaba.fastjson2.JSONObject;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 
+import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /*********************************************************
-   简单的mp4课程视频网络爬虫（备注：1. 自底向上；2. 数据已脱敏。）
+   有使用IO缓冲和多线程的mp4课程视频网络爬虫（备注：1. 自底向上；2. 数据已脱敏。）
               author: zhouhuajian
  *********************************************************/
 
-public class SimpleMp4CourseVideoCrawler {
+public class MultiThreadBufferedMp4CourseVideoCrawler {
     private static Map<String, String> cookies = new HashMap<>();
 
     private static void downloadVideo(String videoUrl) throws IOException {
         Connection.Response response = Jsoup.connect(videoUrl).timeout(100000000).maxBodySize(500000000).cookies(cookies).ignoreContentType(true).execute();
         FileOutputStream fos = new FileOutputStream(new java.io.File("..." + System.currentTimeMillis() + ".mp4"));
-        fos.write(response.bodyAsBytes());
-        fos.close();
+        BufferedOutputStream bos = new BufferedOutputStream(fos);
+        bos.write(response.bodyAsBytes());
+        bos.close();
     }
 
     private static void downloadVideoFromVideoPlayPage(String videoPlayPageUrl) throws IOException {
@@ -50,7 +51,7 @@ public class SimpleMp4CourseVideoCrawler {
     }
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         // 课程详情页面链接 支持多个课程详情页链接
         String[] courseDetailPageUrls = {
             "https://...",
@@ -63,9 +64,29 @@ public class SimpleMp4CourseVideoCrawler {
 
         long startTime = System.currentTimeMillis();
 
-        for (int i = 0; i < courseDetailPageUrls.length; i++) {
-            downloadVideosFromCourseDetailPage(courseDetailPageUrls[i]);
-        }
+        List<String> courseDetailPageUrlLinkedList = Collections.synchronizedList(new LinkedList<>(Arrays.asList(courseDetailPageUrls)));
+
+        Runnable runnable = () -> {
+            try {
+                while (true) {
+                    String courseDetailPageUrl = courseDetailPageUrlLinkedList.remove(0);
+                    downloadVideosFromCourseDetailPage(courseDetailPageUrl);
+                }
+            } catch (IndexOutOfBoundsException e) {
+                System.out.println("子线程正常退出");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+        Thread thread1 = new Thread(runnable);
+        Thread thread2 = new Thread(runnable);
+        Thread thread3 = new Thread(runnable);
+        thread1.start();
+        thread2.start();
+        thread3.start();
+        thread1.join();
+        thread1.join();
+        thread1.join();
 
         long endTime = System.currentTimeMillis();
         System.out.printf("耗时 %f 秒", (endTime - startTime) / 1000.0);

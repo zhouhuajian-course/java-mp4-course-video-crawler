@@ -3,24 +3,26 @@ import com.alibaba.fastjson2.JSONObject;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 
+import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /*********************************************************
-   简单的mp4课程视频网络爬虫（备注：1. 自底向上；2. 数据已脱敏。）
+   有使用IO缓冲的mp4课程视频网络爬虫（备注：1. 自底向上；2. 数据已脱敏。）
               author: zhouhuajian
  *********************************************************/
 
-public class SimpleMp4CourseVideoCrawler {
+public class BufferedMp4CourseVideoCrawler {
     private static Map<String, String> cookies = new HashMap<>();
 
     private static void downloadVideo(String videoUrl) throws IOException {
         Connection.Response response = Jsoup.connect(videoUrl).timeout(100000000).maxBodySize(500000000).cookies(cookies).ignoreContentType(true).execute();
         FileOutputStream fos = new FileOutputStream(new java.io.File("..." + System.currentTimeMillis() + ".mp4"));
-        fos.write(response.bodyAsBytes());
-        fos.close();
+        BufferedOutputStream bos = new BufferedOutputStream(fos);
+        bos.write(response.bodyAsBytes());
+        bos.close();
     }
 
     private static void downloadVideoFromVideoPlayPage(String videoPlayPageUrl) throws IOException {
